@@ -10,12 +10,17 @@ L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
 const yearSelect = document.getElementById("select-year");
 const monthSelect = document.getElementById("select-month");
 
-fetch("data/monthly_crime.json")
-    .then(response => response.json())
-    .then(data => {
-        populateYearDropdown(data);
-    })
-    .catch(error => console.error("Error loading data:", error));
+async function loadCrimeData() {
+  try {
+    const response = await fetch("data/monthly_crime.json");
+    const data = await response.json();
+
+    populateYearDropdown(data);
+
+  } catch (error) {
+    console.error("Error loading data:", error);
+  }
+}
 
 function populateYearDropdown(data) {
     const years = Object.keys(data).sort().reverse();
@@ -43,3 +48,6 @@ function populateMonthDropdown(data, selectedYear) {
         monthSelect.appendChild(option);
     });
 }
+
+
+loadCrimeData();

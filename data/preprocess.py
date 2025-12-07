@@ -14,10 +14,7 @@ import re
 import unicodedata
 
 
-# ---------------------------------------------------------
-# 1. Configuration
-# ---------------------------------------------------------
-INPUT_FILE = "data/raw/crime_jan1_oct31_2025.xlsx"   # change to your actual Excel filename
+INPUT_FILE = "data/raw/crime_jan1_oct31_2025.xlsx"
 OUTPUT_MONTHLY_JSON = "data/processed/crime_monthly.json"
 
 NEIGHBORHOOD_NORMALIZATION_MAP = {
@@ -44,23 +41,19 @@ def load_excel_data(filepath):
 def clean_data(df):
     """Standardizes date formats and extracts Year/Month fields."""
     
-    # Convert ReportedDate to datetime
     df["ReportedDate"] = pd.to_datetime(df["ReportedDate"], errors="coerce")
 
-    # Remove invalid rows
     df = df[df["ReportedDate"].notna()]
 
-    # Extract date components
     df["Year"] = df["ReportedDate"].dt.year
     df["Month"] = df["ReportedDate"].dt.month
     df["MonthName"] = df["ReportedDate"].dt.strftime("%b")  # Jan, Feb, etc.
 
-    # Ensure Neighborhood exists
+    
     df["Neighborhood"] = df["Neighborhood"].fillna("Unknown")
     df["Neighborhood"] = df["Neighborhood"].apply(clean_neighborhood)
 
-
-    # Convert coordinates
+   
     df["XCOORD"] = pd.to_numeric(df.get("XCOORD"), errors="coerce")
     df["YCOORD"] = pd.to_numeric(df.get("YCOORD"), errors="coerce")
 
@@ -71,23 +64,22 @@ def clean_neighborhood(name):
     if not isinstance(name, str):
         return name
 
-    # Normalize unicode
+   
     n = unicodedata.normalize("NFKC", name).strip()
 
-    # Replace all unicode dashes with hyphen
+    
     n = re.sub(r"[\u2012\u2013\u2014\u2015]", "-", n)
 
-    # Remove extra spaces around hyphens
+    
     n = re.sub(r"\s*-\s*", "-", n)
 
-    # Lowercase for lookup
     key = n.lower()
 
-    # If the cleaned string matches a known variant, return the canonical version
+  
     if key in NEIGHBORHOOD_NORMALIZATION_MAP:
         return NEIGHBORHOOD_NORMALIZATION_MAP[key]
 
-    # Otherwise return cleaned name with standardized capitalization
+   
     return " ".join(word.capitalize() for word in n.split())
 
 def build_monthly_counts(df):
@@ -106,7 +98,7 @@ def build_monthly_counts(df):
 def save_outputs(df_clean, df_monthly):
     """Saves cleaned + aggregated datasets."""
 
-    # Save JSON grouped by Year → Month → Neighborhood
+  
     json_dict = {}
     for _, row in df_monthly.iterrows():
         year = str(row["Year"])
@@ -135,7 +127,7 @@ def main():
     
     save_outputs(df_clean, df_monthly)
 
-    print("\n✓ Data extraction complete.")
+    print("\nData extraction complete.")
 
 
 if __name__ == "__main__":
