@@ -15,7 +15,7 @@ import unicodedata
 
 
 INPUT_FILE = "data/raw/crime_jan1_oct31_2025.xlsx"
-OUTPUT_MONTHLY_JSON = "data/processed/crime_monthly.json"
+OUTPUT_MONTHLY_JSON = "data/crime_data.json"
 
 NEIGHBORHOOD_NORMALIZATION_MAP = {
     "spring hill city view": "Spring Hill-City View",
@@ -40,22 +40,25 @@ def load_excel_data(filepath):
 
 def clean_data(df):
     """Standardizes date formats and extracts Year/Month fields."""
+    df = df.rename(columns={
+        "YCOORD": "lat",
+        "XCOORD": "lng"
+    })
+
+    df = df.dropna(subset=["lat", "lng"])
     
     df["ReportedDate"] = pd.to_datetime(df["ReportedDate"], errors="coerce")
-
     df = df[df["ReportedDate"].notna()]
 
     df["Year"] = df["ReportedDate"].dt.year
     df["Month"] = df["ReportedDate"].dt.month
-    df["MonthName"] = df["ReportedDate"].dt.strftime("%b")  # Jan, Feb, etc.
+    df["MonthName"] = df["ReportedDate"].dt.strftime("%b")
 
-    
     df["Neighborhood"] = df["Neighborhood"].fillna("Unknown")
     df["Neighborhood"] = df["Neighborhood"].apply(clean_neighborhood)
 
-   
-    df["XCOORD"] = pd.to_numeric(df.get("XCOORD"), errors="coerce")
-    df["YCOORD"] = pd.to_numeric(df.get("YCOORD"), errors="coerce")
+    df["NIBRS_Offense_Category"] = df["NIBRS_Offense_Category"].fillna("Unknown")
+    df["NIBRS_Offense_Type"] = df["NIBRS_Offense_Type"].fillna("Unknown")
 
     print("Finished cleaning data.")
     return df
@@ -82,37 +85,31 @@ def clean_neighborhood(name):
    
     return " ".join(word.capitalize() for word in n.split())
 
-def build_monthly_counts(df):
-    """Aggregates total crime counts per year/month/neighborhood."""
-    monthly = (
-        df.groupby(["Year", "Month", "MonthName", "Neighborhood"])
-          .size()
-          .reset_index(name="Count")
-          .sort_values(["Year", "Month", "Neighborhood"])
-    )
 
-    print(f"Built monthly counts with {len(monthly)} grouped rows.")
-    return monthly
-
-
-def save_outputs(df_clean, df_monthly):
+def save_outputs(df):
     """Saves cleaned + aggregated datasets."""
 
-  
-    json_dict = {}
-    for _, row in df_monthly.iterrows():
-        year = str(row["Year"])
-        month = str(row["Month"]).zfill(2)
-        hood = row["Neighborhood"]
-        count = int(row["Count"])
+    result = {}
 
-        json_dict.setdefault(year, {}).setdefault(month, {})[hood] = count
+    for (year, month), group in df.groupby(["Year", "Month"]):
+        year = str(year)
+        month = f"{month:02d}"
+
+        result.setdefault(year, {})[month] = [
+            {
+                "lat": float(row.lat),
+                "lng": float(row.lng),
+                "neighborhood": row.Neighborhood,
+                "category": row.NIBRS_Offense_Category,
+                "type": row.NIBRS_Offense_Type
+            }
+            for _, row in group.iterrows()
+        ]
 
     with open(OUTPUT_MONTHLY_JSON, "w") as f:
-        json.dump(json_dict, f, indent=2)
+        json.dump(result, f, indent=2)
 
-    print("Saved output:")
-    print(f"  - {OUTPUT_MONTHLY_JSON}")
+    print(f"Saved point-level monthly data → {OUTPUT_MONTHLY_JSON}")
 
 
 def main():
@@ -122,10 +119,8 @@ def main():
     
     df_raw = load_excel_data(INPUT_FILE)
     df_clean = clean_data(df_raw)
-
-    df_monthly = build_monthly_counts(df_clean)
     
-    save_outputs(df_clean, df_monthly)
+    save_outputs(df_clean)
 
     print("\nData extraction complete.")
 
