@@ -17,6 +17,32 @@ import unicodedata
 INPUT_FILE = "data/raw/crime_jan1_oct31_2025.xlsx"
 OUTPUT_MONTHLY_JSON = "data/crime_data.json"
 
+CATEGORY_TO_SEVERITY = {
+    # Violent
+    "Homicide Offenses": "Violent",
+    "Assault Offenses": "Violent",
+    "Robbery": "Violent",
+    "Kidnapping/Abduction": "Violent",
+    "Human Trafficking": "Violent",
+
+    # Serious
+    "Weapon Law Violations": "Serious",
+    "Drug/Narcotic Offenses": "Serious",
+    "Arson": "Serious",
+    "Burglary/Breaking & Entering": "Serious",
+    "Motor Vehicle Theft": "Serious",
+
+    # Property
+    "Larceny/Theft Offenses": "Property",
+    "Fraud Offenses": "Property",
+    "Destruction/Damage/Vandalism of Property": "Property",
+
+    # Minor
+    "All other Offenses": "Minor",
+    "Not NIBRS Reportable": "Minor"
+}
+
+
 NEIGHBORHOOD_NORMALIZATION_MAP = {
     "spring hill city view": "Spring Hill-City View",
     "spring hill-city view": "Spring Hill-City View",
@@ -59,6 +85,8 @@ def clean_data(df):
 
     df["NIBRS_Offense_Category"] = df["NIBRS_Offense_Category"].fillna("Unknown")
     df["NIBRS_Offense_Type"] = df["NIBRS_Offense_Type"].fillna("Unknown")
+    df["Severity"] = df["NIBRS_Offense_Category"].map(CATEGORY_TO_SEVERITY).fillna("Minor")
+
 
     print("Finished cleaning data.")
     return df
@@ -95,16 +123,23 @@ def save_outputs(df):
         year = str(year)
         month = f"{month:02d}"
 
-        result.setdefault(year, {})[month] = [
-            {
-                "lat": float(row.lat),
-                "lng": float(row.lng),
-                "neighborhood": row.Neighborhood,
-                "category": row.NIBRS_Offense_Category,
-                "type": row.NIBRS_Offense_Type
+        if year not in result:
+            result[year] = {}
+
+        crimes = []
+
+        for _, row in group.iterrows():
+            crime = {
+                "lat": float(row["lat"]),
+                "lng": float(row["lng"]),
+                "neighborhood": row["Neighborhood"],
+                "category": row["NIBRS_Offense_Category"],
+                "type": row["NIBRS_Offense_Type"],
+                "severity": row["Severity"]
             }
-            for _, row in group.iterrows()
-        ]
+            crimes.append(crime)
+
+        result[year][month] = crimes
 
     with open(OUTPUT_MONTHLY_JSON, "w") as f:
         json.dump(result, f, indent=2)
