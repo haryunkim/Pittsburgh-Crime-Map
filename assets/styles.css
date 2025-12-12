@@ -17,4 +17,12 @@ body {
     border: 1px solid #ccc;
 }
 
+.color-box {
+    width: 12px;
+    height: 12px;
+    border: 1px solid #333;
+    display: inline-block;
+    margin-right: 5px;
+}
+
 
