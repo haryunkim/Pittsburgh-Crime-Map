@@ -25,17 +25,17 @@ CATEGORY_TO_SEVERITY = {
     "Kidnapping/Abduction": "Violent",
     "Human Trafficking": "Violent",
 
-    # Serious
-    "Weapon Law Violations": "Serious",
-    "Drug/Narcotic Offenses": "Serious",
-    "Arson": "Serious",
-    "Burglary/Breaking & Entering": "Serious",
-    "Motor Vehicle Theft": "Serious",
-
     # Property
+    "Burglary/Breaking & Entering": "Property",
+    "Motor Vehicle Theft": "Property",
     "Larceny/Theft Offenses": "Property",
     "Fraud Offenses": "Property",
     "Destruction/Damage/Vandalism of Property": "Property",
+
+    # Serious (non-violent but high risk)
+    "Weapon Law Violations": "Serious",
+    "Drug/Narcotic Offenses": "Serious",
+    "Arson": "Serious",
 
     # Minor
     "All other Offenses": "Minor",

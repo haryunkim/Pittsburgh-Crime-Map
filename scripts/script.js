@@ -5,6 +5,14 @@ L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
   attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
 }).addTo(map);
 
+const SEVERITY_COLORS = {
+  "Violent": "#d73027",  
+  "Serious": "#fc8d59",   
+  "Property": "#fee08b", 
+  "Minor": "#91cf60"     
+};
+const crimeLayer = L.layerGroup().addTo(map);
+
 const yearSelect = document.getElementById("selectYear");
 const monthSelect = document.getElementById("selectMonth");
 
@@ -14,10 +22,16 @@ async function loadCrimeData() {
     const data = await response.json();
 
     populateYearMonth(data);
+    updateCrimes(data);
+    
 
     yearSelect.addEventListener("change", () => {
       updateMonths(data, yearSelect.value);
     });
+
+    monthSelect.addEventListener("change", () => {
+      updateCrimes(data);
+    })
 
   } catch (error) {
     console.error("Error loading data:", error);
@@ -52,6 +66,44 @@ function updateMonths(data, selectedYear) {
     option.value = month;
     option.text = month; // TODO: may change to the full month name
     monthSelect.appendChild(option);
+  }
+}
+
+function updateCrimes(data) {
+  const year = yearSelect.value;
+  const month = monthSelect.value;
+
+  crimeLayer.clearLayers();
+
+  if (!data[year] || !data[year][month]) {
+    return;
+  }
+
+  const crimeInfo = data[year][month];
+
+  for (const crime of crimeInfo) {
+    if (crime.lat == null || crime.lng == null) {
+      return;
+    }
+
+    const color = SEVERITY_COLORS[crime.severity] || "#999";
+
+    const marker = L.circleMarker([crime.lat, crime.lng], {
+      radius: 5,
+      color: color,
+      fillColor: color,
+      fillOpacity: 0.7,
+      weight: 1
+    });
+
+    marker.bindPopup(`
+      <strong>${crime.type}</strong><br/>
+      Category: ${crime.category}<br/>
+      Severity: ${crime.severity}<br/>
+      Neighborhood: ${crime.neighborhood}
+    `);
+
+    marker.addTo(crimeLayer);
   }
 }
 
