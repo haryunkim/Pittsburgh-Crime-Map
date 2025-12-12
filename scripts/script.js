@@ -16,22 +16,32 @@ const crimeLayer = L.layerGroup().addTo(map);
 const yearSelect = document.getElementById("selectYear");
 const monthSelect = document.getElementById("selectMonth");
 
+let crimeData = null;
+
+document.addEventListener("DOMContentLoaded", () => {
+  document.querySelectorAll("#filters input").forEach(cb => {
+    cb.addEventListener("change", updateCrimes);
+  });
+
+  yearSelect.addEventListener("change", () => {
+      updateMonths(crimeData, yearSelect.value);
+    });
+
+  monthSelect.addEventListener("change", () => {
+    updateCrimes();
+  })
+
+  loadCrimeData();
+});
+
+
 async function loadCrimeData() {
   try {
     const response = await fetch("data/crime_data.json");
-    const data = await response.json();
+    crimeData = await response.json();
 
-    populateYearMonth(data);
-    updateCrimes(data);
-    
-
-    yearSelect.addEventListener("change", () => {
-      updateMonths(data, yearSelect.value);
-    });
-
-    monthSelect.addEventListener("change", () => {
-      updateCrimes(data);
-    })
+    populateYearMonth(crimeData);
+    updateCrimes();
 
   } catch (error) {
     console.error("Error loading data:", error);
@@ -69,21 +79,30 @@ function updateMonths(data, selectedYear) {
   }
 }
 
-function updateCrimes(data) {
+function updateCrimes() {
   const year = yearSelect.value;
   const month = monthSelect.value;
 
   crimeLayer.clearLayers();
 
-  if (!data[year] || !data[year][month]) {
+  if (!crimeData[year] || !crimeData[year][month]) {
     return;
   }
 
-  const crimeInfo = data[year][month];
+  const activeSeverities = new Set(
+    [...document.querySelectorAll("#filters input:checked")]
+      .map(cb => cb.value)
+  );
+
+  const crimeInfo = crimeData[year][month];
 
   for (const crime of crimeInfo) {
     if (crime.lat == null || crime.lng == null) {
-      return;
+      continue;
+    }
+
+    if (!activeSeverities.has(crime.severity)) {
+      continue;
     }
 
     const color = SEVERITY_COLORS[crime.severity] || "#999";
