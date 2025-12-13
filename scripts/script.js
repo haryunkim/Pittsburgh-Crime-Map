@@ -25,6 +25,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   yearSelect.addEventListener("change", () => {
       updateMonths(crimeData, yearSelect.value);
+      updateCrimes();
     });
 
   monthSelect.addEventListener("change", () => {
