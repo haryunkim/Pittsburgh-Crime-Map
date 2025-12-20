@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <title>Pittsburgh Crime Map</title>
-
+    <link rel="icon" type="image/png" href="static/handcuffs.png">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
      crossorigin=""/>
@@ -15,12 +15,15 @@
     <h2>Pittsburgh Crime Map</h2>
 
     <div id="controls">
-        <label for="year">Year
-            <select id="selectYear"></select>
-        </label>
-        <label for="month">Month
-            <select id="selectMonth"></select>
-        </label>
+        <div class="year-month-label">
+            <label for="year">Year
+                <select id="selectYear"></select>
+            </label>
+            <label for="month">Month
+                <select id="selectMonth"></select>
+            </label>
+        </div>
+        
         <div id="filters">
             <label>Filter by crime type: </label>
             <label><input type="checkbox" value="Violent" checked>
