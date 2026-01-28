@@ -14,7 +14,7 @@ import re
 import unicodedata
 
 
-INPUT_FILE = "data/raw/crime_jan1_oct31_2025.xlsx"
+INPUT_FILE = "data/raw/pittsburgh_crime_2024-2025.xlsx"
 OUTPUT_MONTHLY_JSON = "data/crime_data.json"
 
 CATEGORY_TO_SEVERITY = {
