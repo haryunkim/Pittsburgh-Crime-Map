@@ -1,2 +1,4 @@
 data/raw
 notebooks/
+node_modules/
+dist/
